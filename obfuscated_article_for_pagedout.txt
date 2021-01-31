@@ -1,0 +1,100 @@
+/* Are you bored with closed-source bloated video conferencing software? Want to setup your own server and stream through .onion?
+   Seeking something small and fast? Something written in pure C and runable on Raspberry Pi with 512 MB ram? TRY THIS!! */
+/* file: trunk_structs.h */ /* five files of code. See below code beautifier, it will fix indent and unwrap newlines */
+#define TB(a, b, big) (b) = gtk_toggle_button_new_with_label((a)); gtk_box_pack_start(GTK_BOX(btns), (b), (big), 1, 2)#define N 0, 0
+#define SMORE size_t smore = sizeof(more); zmq_getsockopt(z, ZMQ_RCVMORE, &more, &smore)#define BST struct b_stru#define VER "v0.1"
+#define G fprintf(stderr, "\n -= TRUNK =- video conferencing tool " VER "\n\n")#define D gpointer d#define PEERS 127#define BM 6266880
+#define NEW(type) void *context = zmq_ctx_new(); z = zmq_socket(context, (type))#define WI GtkWidget *w#define PN peer->num
+#define DSIZE(d, x, y) gtk_drawing_area_size(GTK_DRAWING_AREA((d)),(x),(y))#define U u[this_user]#define C continue#define RE return
+#define LINGER zmq_setsockopt(z, ZMQ_LINGER, &linger, sizeof(linger))#define TG(a) gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON((a)))
+#define BOTH for (i = 0; i < 2; i++)#define CADD(c, w) gtk_container_add(GTK_CONTAINER((c)), (w))#define HBOX gtk_hbox_new(N)
+#define UALL for (i = 0; i < PEERS; i++)#define WNEW gtk_window_new(GTK_WINDOW_TOPLEVEL)#define SALL(w) gtk_widget_show_all((w))
+#define PS(a, b) gtk_box_pack_start(GTK_BOX((a)), (b), 0, 1, 2)#define TITLE(w, text) gtk_window_set_title(GTK_WINDOW((w)), text)
+#define CHAN(c) int chan = 0; if (2 == (c)) chan = 1#define CLA(a, b) if ((a) > (b)) (a) = (b)#define R struct peer_stru *r
+#define B(a, b, c) btn = gtk_button_new_with_label((a)); g_signal_connect(G_OBJECT(btn),"clicked",G_CALLBACK((b)), (c)); PS(btns, btn)
+#define TS(a, b) gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON((a)), (b)) /* a lot of code, sorry. no place for picture */
+#include <zmq.h>#include <unistd.h>#include <stdlib.h>#include <err.h>#include <string.h>#include <arpa/inet.h>#include <endian.h>
+char snb[400];int ret,i;void *z=0;BST{char *b; int s;int m;}bz,bv,bframe;struct peer_stru{unsigned char id[64];int id_s;int num; long
+int rp[2];int x;int y;int popup;int con[2];int skip;int n;BST b;void *d[2];void *w[2];char stat[32];void *statw;char ns[PEERS];char nf 
+[PEERS];}u[PEERS],*peer=0,*lpeer=0;char p[8];int linger=0;uint16_t a16,rx,ry;int this_user;void realloc_b(int s,BST *bu){if(bu->s>=s)
+RE;if(bu->b)free(bu->b);bu->b=malloc(s);bu->s=s;if(!bu->b)err(1,"malloc");}void dither(BST *bu,int enable){int16_t *a=(int16_t *)bu->b;
+char *b=bu->b;for(i=0;i<bu->m/2;i++){if(enable&&a[i]<32511)a[i]+=(rand()&0xff);b[i]=(a[i]>>8);}bu->m=bu->m/2;}void eight_recover(BST 
+*bu){i=bu->m;bu->m=i*2;realloc_b(bu->m,bu);char *b=bu->b;int16_t *a=(int16_t *)bu->b;while(i>0){i--;a[i]=b[i]<<8;}}void se(char t,char
+pn,char ch,int x,int y){if(peer)zmq_send(z,peer->id,peer->id_s,ZMQ_SNDMORE);p[0]=1;p[1]=t;p[2]=pn;p[3]=ch;a16=htons(x);memcpy(p+4,&a16,
+2);a16=htons(y);memcpy(p+6,&a16,2);zmq_send(z,p,sizeof(p),ZMQ_SNDMORE);zmq_send(z,bz.b,bz.m,0);memset(p,0,sizeof(p));}int r(void){ret=
+zmq_recv(z,p,sizeof(p),ZMQ_DONTWAIT);if(-1==ret){if(errno!=EAGAIN)perror("zmq_recv()");RE 0;}memcpy(&a16,p+4,2);rx=ntohs(a16);memcpy
+(&a16,p+6,2);ry=ntohs(a16);int more;SMORE;bz.m=0;while(more){bz.m=zmq_recv(z,bz.b,bz.s,0);SMORE;}CLA(bz.m,bz.s);RE 1;}struct audio_s
+{long wp;long rp;FILE *f;char *fname;}af[2];void qaudio(int chan,char *b,int s){i=0;if(!af[chan].f){af[chan].f=fopen(af[chan].fname,
+"a+");i=1;}if(!af[chan].f)err(1,"fopen()");fseek(af[chan].f,0,SEEK_END);if(i)af[chan].rp=ftell(af[chan].f);fwrite(b,s,1,af[chan].f);af
+[chan].wp=ftell(af[chan].f);}void qreplay(void){FILE *f=af[0].f;if(!f)RE;i=48000;while(i>0){fseek(f,af[0].rp,SEEK_SET);ret=fread(bz.b,
+1,16384,f);if(!ret)RE;ret=write(1,bz.b,ret);if(ret<0)break;if(ret>0){af[0].rp+=ret;i+=ret;}}}void silence(int chan,int len){bz.m=len*2;
+realloc_b(bz.m,&bz);memset(bz.b,0,bz.m);qaudio(chan,bz.b,bz.m);}
+/* file: trunkd.c */ #include "trunk_structs.h"
+int talk[2];void n_all(void){UALL u[i].n=1;}void find_id(void){for(i=1;i<PEERS;i++){if(u[i].id_s){if((bz.m==u[i].id_s)&&(memcmp(bz.b,u
+[i].id,u[i].id_s)==0)){peer=u+i;RE;}}else{peer=u+i;PN=i;if(bz.m>sizeof(peer->id))RE;peer->id_s=bz.m;memcpy(u[i].id,bz.b,bz.m);BOTH{peer
+->rp[i]=af[i].wp;if(peer->rp[i]>96000)peer->rp[i]-=96000;}RE;}}peer=0;}int main(int argc,char *argv[]){G;realloc_b(BM,&bz);if(argc<4)
+errx(1,"Usage: ./trunkd tcp://0.0.0.0:3345 001_1.pcm 001_2.pcm\n");af[0].fname=argv[2];af[1].fname=argv[3];silence(0,48000);silence(1,
+48000);NEW(ZMQ_ROUTER);LINGER;ret=zmq_bind(z,argv[1]);if(ret)err(2,"zmq_bind()");fprintf(stderr,"listening on %s\n",argv[1]);while(1){
+ret=zmq_recv(z,bz.b,bz.s,0);if(-1==ret)err(2,"zmq_recv()");bz.m=ret;find_id();r();if(!peer)C;if(1==p[1]){/*req*/char query[PEERS];if(bz
+.m>PEERS)bz.m=PEERS;memset(query,0,PEERS);memcpy(query,bz.b,bz.m);UALL{if(u[i].id_s){char siz[32],tlk[32];int talk_c=0;if(i==talk[0])
+talk_c=1;if(i==talk[1])talk_c=2;snprintf(siz,sizeof(siz),"(%ix%i) ",u[i].x,u[i].y);snprintf(tlk,sizeof(tlk),"[Talk %i] ",talk_c);bz.m=
+snprintf(bz.b,bz.s,"%s%s%s%s",(talk_c)?tlk:"",(u[i].x)?siz:"",u[i].stat,(i==PN)?" (it's you)":"");bz.m++;if(peer->n)se(2,i,N,0);/*sends
+tat*/if(peer->ns[i]){peer->ns[i]=0;bz.m=0;se(3,i,(PN==i)?0:u[i].popup,u[i].x,u[i].y);/*send framesize*/}if(peer->nf[i]&&u[i].b.m&&query
+[i]){peer->nf[i]=0;bz.m=u[i].b.m;memcpy(bz.b,u[i].b.b,bz.m);se(4,i,N,0);/*send frame*/}}}peer->n=0;bz.m=0;se(1,PN,N,0);/*send rep*/}if(
+2==p[1]){/*stat*/n_all();CLA(bz.m,sizeof(peer->stat));if(!bz.m)C;bz.b[bz.m-1]=0;memcpy(peer->stat,bz.b,bz.m);}if(3==p[1]){/*framesize*/
+peer->popup=p[2];peer->x=rx;peer->y=ry;UALL u[i].ns[PN]=1;n_all();}if(4==p[1]){/*frame*/peer->b.m=bz.m;realloc_b(bz.m, &peer->b);memcpy
+(peer->b.b,bz.b,bz.m);UALL u[i].nf[PN]=1;}if(5==p[1]){/*audio*/CHAN(p[3]);if(!talk[chan])n_all();if((talk[chan]&&talk[chan]!=PN)&&!ry){
+bz.m=0;se(7,1,N,0);/*cancel talk*/C;}talk[chan]=PN;if(rx)eight_recover(&bz);qaudio(chan,bz.b,bz.m);peer->rp[chan]=af[chan].wp;}if(6==p[
+1]){/*req audio*/CHAN(p[3]);if(!af[chan].f)C;fseek(af[chan].f,peer->rp[chan],SEEK_SET);bz.m=fread(bz.b,1,240000,af[chan].f);if(!bz.m)C;
+peer->rp[chan]+=bz.m;if(rx)dither(&bz,ry);se(5,1,p[3],rx,0);/*send audio*/}if(7==p[1]){/*talk over*/CHAN(p[3]);if(talk[chan]!=PN)C;talk
+[chan]=0;silence(chan,12000);n_all();}}RE 0;}
+/* file: trunk.c */ #include <fcntl.h>#include <gtk/gtk.h>#include <keybinder.h>
+char talk_ch,popup,sync_play;int per,ipt,hot_num,tpr;GtkWidget *ww,*b1,*btns,*btn,*talk,*s8,*r8,*rd,*r2,*s2,*wi;
+#include "trunk_structs.h"#include "avi_grabber.c"
+static gboolean del(WI,GdkEvent *e,D){R=d;BOTH{if(r->w[i]==w){r->d[i]=0;r->w[i]=0;}}RE FALSE;}void uspawn(D,R){i=0;if(r->d[i])i++;if(r
+->d[i])RE;r->w[i]=WNEW;r->d[i]=gtk_drawing_area_new();DSIZE(r->d[i],r->x,r->y);CADD(r->w[i],r->d[i]);g_signal_connect(r->w[i],"delete-"
+"event",G_CALLBACK(del),r);TITLE(r->w[i],r->stat);SALL(r->w[i]);}GdkPixbuf *pp,*ps;void video_out(R,BST *b){if(r->popup){uspawn(0,r);r
+->popup=0;}if(!b->m)RE;realloc_b(r->y*r->x*3,b);pp=gdk_pixbuf_new_from_data((unsigned char *)b->b,GDK_COLORSPACE_RGB,0,8,r->x,r->y,r->x
+*3,N);BOTH{wi=r->d[i];if(!wi)C;ps=gdk_pixbuf_scale_simple(pp,wi->allocation.width,wi->allocation.height,GDK_INTERP_NEAREST);
+gdk_draw_pixbuf(wi->window,0,ps,N,N,gdk_pixbuf_get_width(ps),gdk_pixbuf_get_height(ps),GDK_RGB_DITHER_NONE,N);g_object_unref(ps);}
+g_object_unref(pp);}void put_statw(void){btns=HBOX;PS(b1,btns);B("Show",uspawn,u+this_user);U.statw=gtk_label_new(U.stat);PS(btns,U.
+statw);SALL(ww);}gint callback(D){qreplay();int talkk=TG(talk);talk_ch=(TG(s2))?2:1;if(!talkk&&tpr){bz.m=0;se(7,0,talk_ch,N);}tpr=talkk
+;grab_avi(24000,per,talkk,TG(s8));if(local_frame){video_out(u+0,&bframe);local_frame=0;}while(r()){this_user=p[2];if(this_user<=0)C;if(
+1==p[1]){bz.m=0;se(6,0,(TG(r2))?2:1,TG(r8),TG(rd));if(frame){frame=0;bz.m=bframe.m;realloc_b(bz.m,&bz);memcpy(bz.b,bframe.b,bframe.m);
+se(4,N,N);}bz.m=PEERS;UALL{bz.b[i]=(u[i].d[0]||u[i].d[1]||u[i].popup)?1:0;}se(1,N,N);}if(2==p[1]){if(bz.m>0){CLA(bz.m,sizeof(U.stat));
+bz.b[bz.m-1]=0;memcpy(U.stat,bz.b,bz.m);if(!U.statw)put_statw();else gtk_label_set_text(GTK_LABEL(U.statw),U.stat);BOTH if(U.w[i])TITLE
+(U.w[i], U.stat);}}if(3==p[1]){BOTH if(U.d[i])DSIZE(U.d[i],rx,ry);U.x=rx;U.y=ry;U.skip=1;if(p[3])U.popup=1;}if(4==p[1]){if(U.skip>0){U.
+skip--;C;}video_out(u+this_user,&bz);}if(5==p[1]){if(rx)eight_recover(&bz);qaudio(0,bz.b,bz.m);}if(7==p[1]){TS(talk,0);fprintf(stderr,
+"msg cancel talk (use interrupt button)\n");}}RE TRUE;}void i_pressed(WI,D){TS(talk,1);ipt=1;}void kill_ff(WI,D){system("/usr/bin/kill"
+"all -s SIGKILL ffmpeg");system("/usr/bin/killall avconv");fprintf(stderr,"\nHint: Type 'stty echo' to enable echoing\n\n");}void
+hotkey_pressed(const char *s,D){TS(talk,!TG(talk));}int hotkey(char *s,int n){i=keybinder_bind(s,hotkey_pressed,0);if(i)hot_num=n;RE i;
+}int main(int argc,char *argv[]){gtk_init(&argc,&argv);G;if(argc<8)errx(1,"Usage:\n\n ffmpeg -hide_banner -loglevel 24 -f video4linux2"
+" -framerate 3 -video_size 160x120 -i /dev/video0 -f alsa -i default -f avi -c:v rawvideo -pix_fmt rgb24 -c:a pcm_s16le -ac 1 -ar 2400"
+"0 - | buffer |  ./trunk 73 1 0 1 trunk_recv.pcm tcp://127.0.0.1:3345 $USER | play -q -t raw -e signed-integer -b 16 -c 1 -r 24000 -\n"
+"\n");per=atoi(argv[1]);video=atoi(argv[2]);sync_play=atoi(argv[3]);popup=atoi(argv[4]);af[0].fname=argv[5];char *endp=argv[6];char *
+unm=argv[7];NEW(ZMQ_DEALER);LINGER;ret=zmq_connect(z,endp);if(ret)err(1,"zmq_connect()");realloc_b(BM,&bz);realloc_b(BM,&bv);bz.m=
+strlen(unm)+1;CLA(bz.m,bz.s);memcpy(bz.b,unm,bz.m);se(2,N,N);bz.m=0;se(1,N,N);u[0].popup=1;strncpy(u[0].stat,"local",sizeof(u[0].stat))
+;state1();int flags=fcntl(0,F_GETFL,0);fcntl(0,F_SETFL,flags|O_NONBLOCK);flags=fcntl(1,F_GETFL,0);fcntl(1,F_SETFL,flags|O_NONBLOCK);
+guint timer=gtk_timeout_add(per,callback,NULL);g_source_set_priority(g_main_context_find_source_by_id(0,timer),150);ww=WNEW;
+g_signal_connect(ww,"delete-event",G_CALLBACK(gtk_main_quit),0);b1=gtk_vbox_new(N);CADD(ww,b1);btns=HBOX;gtk_box_pack_start(GTK_BOX(b1)
+,btns,0,1,2);keybinder_init();if(!hotkey("F9",9))hotkey("F10",10);char snb2[20];snprintf(snb2,sizeof(snb2),"(f%i)",hot_num);snprintf(
+snb,sizeof(snb),"-= Talk %s =-", (hot_num)?snb2:"");TB(snb,talk,1);B("Interrupt",i_pressed,0);TB("chan B",s2,0);TB("8-bit",s8,0);B
+("Kill ffmpeg",kill_ff,0);btns=HBOX;PS(b1,btns);B("Show local",uspawn,u+0);TB("8-bit",r8,0);TB("Dither",rd,0);TB("chan B",r2,1);/*TODO
+rewind pause*/B("Quit",gtk_main_quit,0);TITLE(ww,"TRUNK "VER);SALL(ww);gtk_main();bz.m=0;se(7,0,talk_ch,N);i=snprintf(bz.b,bz.s,"[Quit"
+"] %s",unm);bz.m=i+1;se(2,N,N);zmq_close(z);zmq_ctx_destroy(context);RE 0;}
+/* file: avi_grabber.c */ int faud,frame,local_frame,abp,an,state,video;char four[5],*wb;uint32_t bs32;void state1(void){state=1;abp=0;
+an=8;}int fc(char *fo){for(i=0;i<4;i++){if(four[i]!=fo[i])RE 0;}RE 1;}void stalk(int ei){realloc_b(bz.m,&bz);memcpy(bz.b,bv.b,bz.m);if(
+ei)dither(&bz,1);se(5,0,talk_ch,ei,ipt);ipt=0;}void grab_avi(int rate,int period,int ttalk,int ei){faud+=(rate/1000)*period;CLA(faud,
+rate*3);if(sync_play&&(!video||u[0].x)&&!ttalk)RE;while(1){if(!video)an=faud*2;ret=read(0,bv.b+abp,an);if(!ret)RE;if((ret<0)&&(EAGAIN==
+errno||EWOULDBLOCK==errno||EINTR==errno))RE;if(ret<0)err(1,"read(stdin)");abp+=ret;an-=ret;if(!video){bz.m=ret;faud-=bz.m/2;if(ttalk)
+stalk(ei);state1();if(faud<0)RE;C;}if(!an){if(3==state){if(fc("avih")){memcpy(&bs32,bv.b+32,4);u[0].x=le32toh(bs32);memcpy(&bs32,bv.b+
+36,4);u[0].y=le32toh(bs32);se(3,popup,3,u[0].x,u[0].y);}if(fc("00dc")){frame=1;local_frame=1;realloc_b(bv.m,&bframe);bframe.m=bv.m;
+memcpy(bframe.b,bv.b,bv.m);state1();RE;}bz.m=bv.m;if(!wb&&fc("01wb"))wb="01wb";if(!wb&&fc("00wb"))wb="00wb";if(wb&&fc(wb)&&ttalk)stalk(
+ei);state1();C;}if(2==state){memcpy(four,bv.b,4);four[4]=0;state1();C;}if(1==state){memcpy(four,bv.b,4);four[4]=0;memcpy(&bs32,bv.b+4,4
+);bv.m=le32toh(bs32);if(bv.m&1)bv.m++;if(fc("LIST")||fc("RIFF")){state=2;an=4;abp=0;}else{state=3;an=bv.m;abp=0;realloc_b(bv.m,&bv);if(
+!bv.m)state1();}}}}}
+/* file make.sh */ # sudo apt install -y ffmpeg libsox-fmt-all sox libkeybinder-dev buffer libgtk2.0-dev pkg-config libzmq3-dev indent
+echo fixing indent && sed -i -e 's/#define /\n#define /g' -e 's/#inc/\n#inc/g' trunk_structs.h && sed -i 's/#inc/\n#inc/g' trunk.c && \
+indent *.c *.h && echo compiling trunkd && gcc -Wall trunkd.c -lzmq -o trunkd && echo compiling trunk && gcc -Wall trunk.c \
+`pkg-config --cflags --libs gtk+-2.0` -lzmq -lkeybinder -o trunk && echo done
+
